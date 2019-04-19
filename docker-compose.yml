@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  api:
+    image: <golang image>
+    environment:
+      - TZ=Asia/Shanghai
+      - ENV=prod
+      - CONFIG_PATH_PREFIX=/app/src/config/
+
+      - WeixinAppID=WeixinAppID
+      - WeixinAppSecret=WeixinAppSecret
+      - WeixinToken=WeixinToken
+      - WeixinEncodingAESKey=WeixinEncodingAESKey
+
+      - MONGO_INITDB_ROOT_USERNAME=USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=PASSWORD
+      - MONGO_INITDB_DATABASE=wechat
+
+      - RedisPass=PASSWORD
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./src:/app/src
+      - ./log:/app/log
+    ports:
+      - "6562:3000"
+    depends_on:
+      - redis
+      - mongo
+    container_name: wechat-service-center-api
+    entrypoint: go run src/main.go
+  mongo:
+    image: mongo:3.6.3
+    expose:
+      - "27017"
+    ports:
+      - "49275:27017"
+    volumes:
+      - ./data/mongo:/data/db
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Asia/Shanghai
+      - MONGO_INITDB_ROOT_USERNAME=USERNAME
+      - MONGO_INITDB_ROOT_PASSWORD=PASSWORD
+      - MONGO_INITDB_DATABASE=wechat
+    container_name: wechat-service-center-mongo
+  redis:
+    image: redis:4.0.8
+    ports:
+      - "49276:6379"
+    environment:
+      - TZ=Asia/Shanghai
+      - RedisPass=PASSWORD
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data/redis:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+    container_name: wechat-service-center-redis

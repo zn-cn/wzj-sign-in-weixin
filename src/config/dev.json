@@ -1,0 +1,11 @@
+{
+  "AppInfo": {
+    "Env": "dev"
+  },
+  "Wechat": {
+    "AppID": "AppID",
+    "AppSecret": "AppSecret",
+    "Token": "Token",
+    "EncodingAESKey": "EncodingAESKey"
+  }
+}

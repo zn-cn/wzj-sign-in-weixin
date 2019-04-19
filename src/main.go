@@ -1,0 +1,39 @@
+/*
+Package main package is the entry file
+*/
+package main
+
+import (
+	"config"
+	"constant"
+	"controller"
+
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"github.com/robfig/cron"
+)
+
+func main() {
+	go startTimer()
+	startWeb()
+}
+
+func startWeb() {
+	e := echo.New()
+
+	e.Use(middleware.Recover())
+
+	v1 := e.Group(constant.APIPrefix)
+	v1.GET("/event", controller.DelSignature)
+	v1.POST("/event", controller.DelEvent)
+
+	e.Logger.Fatal(e.Start(config.Conf.AppInfo.Addr))
+}
+
+func startTimer() {
+	c := cron.New()
+	controller.StartHourTimer()
+	c.AddFunc(constant.TimerEveryHour, controller.StartHourTimer)
+	c.AddFunc(constant.TimerEveryFiveSecond, controller.StartTaskTimer)
+	c.Start()
+}

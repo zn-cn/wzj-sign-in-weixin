@@ -1,0 +1,30 @@
+{
+  "AppInfo": {
+    "Env": "default",
+    "Addr": ":3000"
+  },
+  "Log": {
+    "LogBasePath": "/app/log/",
+    "LogFileName": "wechat-service-center"
+  },
+  "DB": {
+    "DriverName": "mongodb",
+    "Host": "mongo",
+    "Port": "27017",
+    "User": "USERNAME",
+    "PW": "PASSWORD",
+    "DBName": "wechat",
+    "AdminDBName": "admin"
+  },
+  "Redis": {
+    "Host": "redis",
+    "Port": "6379",
+    "PW": "PASSWORD"
+  },
+  "Wechat": {
+    "AppID": "AppID",
+    "AppSecret": "AppSecret",
+    "Token": "Token",
+    "EncodingAESKey": "EncodingAESKey"
+  }
+}
