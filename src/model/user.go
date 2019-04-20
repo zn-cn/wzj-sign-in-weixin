@@ -218,13 +218,16 @@ func userCheckIn(textOpenid string, coordinate Coordinate) error {
 		}
 	})
 
-	req, err := http.NewRequest("POST", constant.URLWZJStuSignIn, ioutil.NopCloser(strings.NewReader(data.Encode())))
-	if err != nil {
-		return err
+	if data.Get("courseId") != "" && data.Get("openid") != "" && data.Get("signId") != "" {
+		req, err := http.NewRequest("POST", constant.URLWZJStuSignIn, ioutil.NopCloser(strings.NewReader(data.Encode())))
+		if err != nil {
+			return err
+		}
+
+		req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Mobile/12H143 MicroMessenger/6.2.3 NetType/WIFI Language/zh_CN")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+		_, err = client.Do(req)
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Mobile/12H143 MicroMessenger/6.2.3 NetType/WIFI Language/zh_CN")
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	_, err = client.Do(req)
 	return err
 }
