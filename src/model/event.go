@@ -2,6 +2,7 @@ package model
 
 import (
 	"config"
+	"constant"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/xml"
@@ -79,31 +80,34 @@ type EventFunc func(EventMsg) (interface{}, error)
 
 func EventSubscribe(msg EventMsg) (interface{}, error) {
 	err := createUser(msg.FromUserName)
-	return GetWelcomeTextMsg, err
+	go setUserCurCoordinate(msg.FromUserName, Coordinate{})
+	text := NewResTextMsg(msg)
+	text.Content = constant.WechatWelcomeText + "\n\n" + constant.WechatHelpText
+	return text, err
 }
 
 func EventUnSubscribe(msg EventMsg) (interface{}, error) {
-	return GetDefaultTextMsg, nil
+	return GetDefaultTextMsg(msg), nil
 }
 
 func EventScan(msg EventMsg) (interface{}, error) {
-	return GetDefaultTextMsg, nil
+	return GetDefaultTextMsg(msg), nil
 }
 
 func EventLocation(msg EventMsg) (interface{}, error) {
-	return GetDefaultTextMsg, nil
+	return GetDefaultTextMsg(msg), nil
 }
 
 func EventClick(msg EventMsg) (interface{}, error) {
-	return GetDefaultTextMsg, nil
+	return GetDefaultTextMsg(msg), nil
 }
 
 func EventView(msg EventMsg) (interface{}, error) {
-	return GetDefaultTextMsg, nil
+	return GetDefaultTextMsg(msg), nil
 }
 
 func MsgEvent(msg EventMsg) (interface{}, error) {
-	return GetDefaultTextMsg, nil
+	return GetDefaultTextMsg(msg), nil
 }
 
 func GetSignature(timestamp, nonce string) string {

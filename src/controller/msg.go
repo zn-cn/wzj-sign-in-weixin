@@ -154,7 +154,9 @@ func DelEvent(c echo.Context) error {
 			if delF, ok := stateDel[status]; ok {
 				textData.Content, err = delF(data.FromUserName, data.Content)
 				// 复原状态
-				go model.SetRedisUserStatus(data.FromUserName, 0)
+				if err == nil {
+					go model.SetRedisUserStatus(data.FromUserName, 0)
+				}
 			} else {
 				if textDelF, ok := textMachine[text]; ok {
 					textData.Content, err = textDelF(data.FromUserName, text)

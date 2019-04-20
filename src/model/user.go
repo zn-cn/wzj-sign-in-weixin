@@ -20,7 +20,7 @@ import (
 // redis 中暂存用户状态
 type User struct {
 	ID     bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
-	Openid string        `bson:"openid" json:"openid"` // unique 索引
+	Openid string        `bson:"openid" json:"openid"`
 	// redis 中存储当前选中坐标
 	Coordinates map[string]Coordinate `bson:"coordinates" json:"coordinates"` // 标签 -> 坐标
 }
@@ -95,15 +95,20 @@ func SetUserCurCoordinateByTag(openid, tag string) (Coordinate, error) {
 	}
 
 	if c, ok := user.Coordinates[tag]; ok {
-		cntrl := db.NewRedisDBCntlr()
-		defer cntrl.Close()
-		conn := cntrl.GetConn()
-
-		_, err = conn.Do("SET", fmt.Sprintf(constant.RedisUserCurCoordinate, openid),
-			fmt.Sprintf(constant.RedisUserCoordinateFormat, c.Lon, c.Lat))
+		setUserCurCoordinate(openid, c)
 		coordinate = c
 	}
 	return coordinate, err
+}
+
+func setUserCurCoordinate(openid string, coordinate Coordinate) error {
+	cntrl := db.NewRedisDBCntlr()
+	defer cntrl.Close()
+	conn := cntrl.GetConn()
+
+	_, err := conn.Do("SET", fmt.Sprintf(constant.RedisUserCurCoordinate, openid),
+		fmt.Sprintf(constant.RedisUserCoordinateFormat, coordinate.Lon, coordinate.Lat))
+	return err
 }
 
 func GetUserCoordinates(openid string) (map[string]Coordinate, error) {
