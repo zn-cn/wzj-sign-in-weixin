@@ -20,7 +20,7 @@ import (
 // redis 中暂存用户状态
 type User struct {
 	ID     bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
-	Openid string        `bson:"openid" json:"openid"`
+	Openid string        `bson:"openid" json:"openid"` // unique 索引
 	// redis 中存储当前选中坐标
 	Coordinates map[string]Coordinate `bson:"coordinates" json:"coordinates"` // 标签 -> 坐标
 }
