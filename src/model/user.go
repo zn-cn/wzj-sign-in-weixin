@@ -302,7 +302,7 @@ func checkIsHaveDiscuss(openid string) error {
 	}
 	for _, course := range courses {
 		if course.Topic != "" {
-			content := fmt.Sprintf("课程名: %s\n讨论话题: %s, 是否被选中: %v", course.Name, course.Topic, course.Selected)
+			content := fmt.Sprintf("课程名: %s<br/>讨论话题: %s<br/>课程是否被选中: %v", course.Name, course.Topic, course.Selected)
 			if ok, _ := getRedisUserCourseNotice(openid, course.ID); !ok {
 				go util.SendEmail("阿楠技术", "微助教讨论提醒", content, []string{user.Email})
 				setRedisUserCourseNotice(openid, course.ID)
