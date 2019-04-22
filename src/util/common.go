@@ -1,34 +1,23 @@
 package util
 
 import (
-	"time"
+	"config"
 
-	"github.com/imroc/req"
-	jsoniter "github.com/json-iterator/go"
+	gomail "gopkg.in/gomail.v2"
 )
 
-// JSONStructToMap convert struct to map
-func JSONStructToMap(obj interface{}) map[string]interface{} {
-	jsonBytes, _ := jsoniter.Marshal(obj)
-	var data map[string]interface{}
-	jsoniter.Unmarshal(jsonBytes, &data)
-	return data
-}
+func SendEmail(name, subject, content string, emailTos []string) {
+	m := gomail.NewMessage()
+	emailInfo := config.Conf.EmailInfo
+	m.SetAddressHeader("From", emailInfo.From, name) // 发件人
 
-// BindGetJSONData bind the json data of method GET
-// body must be a point
-func BindGetJSONData(url string, param req.Param, body interface{}) error {
-	r, err := req.Get(url, param)
-	if err != nil {
-		return err
-	}
-	err = r.ToJSON(body)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+	// 收件人
+	m.SetHeader("To",
+		emailTos...,
+	)
+	m.SetHeader("Subject", subject) // 主题
+	m.SetBody("text/html", content) // 正文
 
-func GetNowTimestamp() int64 {
-	return time.Now().UnixNano() / 1000000
+	d := gomail.NewPlainDialer(emailInfo.Host, 465, emailInfo.From, emailInfo.AuthCode) // 发送邮件服务器、端口、发件人账号、发件人密码
+	d.DialAndSend(m)
 }

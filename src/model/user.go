@@ -1,6 +1,7 @@
 package model
 
 import (
+	"bytes"
 	"constant"
 	"errors"
 	"fmt"
@@ -12,6 +13,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"util"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gomodule/redigo/redis"
@@ -23,6 +27,7 @@ import (
 type User struct {
 	ID     bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
 	Openid string        `bson:"openid" json:"openid"`
+	Email  string        `bson:"email" json:"email"`
 	// redis 中存储当前选中坐标
 	Coordinates map[string]Coordinate `bson:"coordinates" json:"coordinates"` // 标签 -> 坐标
 }
@@ -30,6 +35,29 @@ type User struct {
 type Coordinate struct {
 	Lon float64 `bson:"lon" json:"lon"`
 	Lat float64 `bson:"lat" json:"lat"`
+}
+
+type WZJCourse struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Topic        string `json:"topic"`
+	Code         string `json:"code"`
+	College      string `json:"college"`
+	Department   string `json:"department"`
+	DiscussionID string `json:"discussionId"`
+	Selected     bool   `json:"selected"`
+}
+
+func SetUserEmail(openid, email string) error {
+	query := bson.M{
+		"openid": openid,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"email": email,
+		},
+	}
+	return updateUser(query, update)
 }
 
 func AddSignInTask(openid, textOpenid string) error {
@@ -85,13 +113,10 @@ func AddUserCoordinate(openid, tag string, coordinate Coordinate) error {
 
 func SetUserCurCoordinateByTag(openid, tag string) (Coordinate, error) {
 	var coordinate Coordinate
-	query := bson.M{
-		"openid": openid,
-	}
 	selector := bson.M{
 		"coordinates": 1,
 	}
-	user, err := findUser(query, selector)
+	user, err := getUserByOpenid(openid, selector)
 	if err != nil {
 		return coordinate, err
 	}
@@ -113,49 +138,41 @@ func setUserCurCoordinate(openid string, coordinate Coordinate) error {
 	return err
 }
 
-func GetUserCoordinates(openid string) (map[string]Coordinate, error) {
-	query := bson.M{
-		"openid": openid,
+func SetUserCurCourse(openid, courseName string, courseID int) error {
+	textOpenid, err := getTextOpenid(openid)
+	if err != nil {
+		return err
 	}
+
+	client := &http.Client{}
+	data := map[string]interface{}{}
+	data["courseId"] = courseID
+	data["courseName"] = courseName
+	dataByte, _ := jsoniter.Marshal(data)
+
+	req, err := http.NewRequest("POST", constant.URLWZJCourseSelect, bytes.NewBuffer(dataByte))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Mobile/12H143 MicroMessenger/6.2.3 NetType/WIFI Language/zh_CN")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("openId", textOpenid)
+	req.Header.Set("Host", "v18.teachermate.cn")
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	return nil
+}
+
+func GetUserCoordinates(openid string) (map[string]Coordinate, error) {
 	selector := bson.M{
 		"coordinates": 1,
 	}
-	user, err := findUser(query, selector)
+	user, err := getUserByOpenid(openid, selector)
 	return user.Coordinates, err
-}
-
-func createUser(openid string) error {
-	cntrl := db.NewCloneMgoDBCntlr()
-	defer cntrl.Close()
-	userTable := cntrl.GetTable(constant.TableUser)
-	user := User{}
-	query := bson.M{
-		"openid": openid,
-	}
-	err := userTable.Find(query).One(&user)
-	if err != nil {
-		user.ID = bson.NewObjectId()
-		user.Openid = openid
-		err = userTable.Insert(user)
-	}
-	return err
-}
-
-func findUser(query, selector bson.M) (User, error) {
-	cntrl := db.NewCloneMgoDBCntlr()
-	defer cntrl.Close()
-	userTable := cntrl.GetTable(constant.TableUser)
-	user := User{}
-	err := userTable.Find(query).Select(selector).One(&user)
-	return user, err
-}
-
-func updateUser(query, update bson.M) error {
-	cntrl := db.NewCloneMgoDBCntlr()
-	defer cntrl.Close()
-	userTable := cntrl.GetTable(constant.TableUser)
-
-	return userTable.Update(query, update)
 }
 
 func StartStuSignTask() error {
@@ -169,7 +186,8 @@ func StartStuSignTask() error {
 		if textOpenid == "" {
 			continue
 		}
-		c, _ := redis.String(conn.Do("GET", fmt.Sprintf(constant.RedisUserCurCoordinate, key[len(constant.RedisUserTask)-2:])))
+		openid := key[len(constant.RedisUserTask)-2:]
+		c, _ := redis.String(conn.Do("GET", fmt.Sprintf(constant.RedisUserCurCoordinate, openid)))
 		if c == "" {
 			continue
 		}
@@ -183,7 +201,13 @@ func StartStuSignTask() error {
 			Lon: lon,
 			Lat: lat,
 		}
-		go userCheckIn(textOpenid, coordinate)
+		go func(textOpenid, openid string) {
+			ok, _ := userCheckIn(textOpenid, coordinate)
+			if ok {
+				signSuccessNotice(openid)
+			}
+		}(textOpenid, openid)
+		go checkIsHaveDiscuss(openid)
 	}
 	return nil
 }
@@ -196,23 +220,23 @@ var nameMap = map[string]string{
 	"course-id":  "courseId",
 }
 
-func userCheckIn(textOpenid string, coordinate Coordinate) error {
+func userCheckIn(textOpenid string, coordinate Coordinate) (bool, error) {
 	client := &http.Client{}
 
 	// Request the HTML page.
 	res, err := http.Get(fmt.Sprintf(constant.URLWZJSignIn, textOpenid))
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		return errors.New("request wrong")
+		return false, errors.New("request wrong")
 	}
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	data := url.Values{}
@@ -234,13 +258,132 @@ func userCheckIn(textOpenid string, coordinate Coordinate) error {
 		data.Set("lat", strconv.FormatFloat(coordinate.Lat, 'f', 5, 64))
 		req, err := http.NewRequest("POST", constant.URLWZJStuSignIn, ioutil.NopCloser(strings.NewReader(data.Encode())))
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Mobile/12H143 MicroMessenger/6.2.3 NetType/WIFI Language/zh_CN")
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-		_, err = client.Do(req)
+		res, err = client.Do(req)
+		if err != nil {
+			return false, err
+		}
+		defer res.Body.Close()
+		if res.StatusCode == 200 {
+			return true, nil
+		}
+	}
+	return false, err
+}
+
+func signSuccessNotice(openid string) error {
+	query := bson.M{
+		"openid": openid,
+	}
+	user, _ := findUser(query, bson.M{"email": 1})
+	if user.Email == "" {
+		return errors.New("email empty")
+	}
+	util.SendEmail("阿楠技术", "微助教签到成功提醒", "微助教签到成功提醒", []string{user.Email})
+	return nil
+}
+
+// 检测是否有讨论并邮件提醒
+func checkIsHaveDiscuss(openid string) error {
+	user, err := getUserByOpenid(openid, bson.M{"email": 1})
+	if err != nil {
+		return err
+	}
+	if user.Email == "" {
+		return errors.New("email is empty")
+	}
+	courses, err := ListWZJDiscussCourses(openid)
+	if err != nil {
+		return err
+	}
+	for _, course := range courses {
+		if course.Topic != "" {
+			content := fmt.Sprintf("课程名: %s\n讨论话题: %s, 是否被选中: %v", course.Name, course.Topic, course.Selected)
+			go util.SendEmail("阿楠技术", "微助教讨论提醒", content, []string{user.Email})
+		}
+	}
+	return nil
+}
+
+func ListWZJDiscussCourses(openid string) ([]WZJCourse, error) {
+	textOpenid, err := getTextOpenid(openid)
+	if err != nil {
+		return nil, err
 	}
 
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", constant.URLWZHDisCourseList, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Mobile/12H143 MicroMessenger/6.2.3 NetType/WIFI Language/zh_CN")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("openId", textOpenid)
+	req.Header.Set("Host", "v18.teachermate.cn")
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	dataByte, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	data := map[string][]WZJCourse{}
+	err = jsoniter.Unmarshal(dataByte, &data)
+	return data["courses"], err
+}
+
+func getTextOpenid(openid string) (string, error) {
+	cntrl := db.NewRedisDBCntlr()
+	defer cntrl.Close()
+	conn := cntrl.GetConn()
+
+	return redis.String(conn.Do("GET", fmt.Sprintf(constant.RedisUserTask, openid)))
+}
+
+func createUser(openid string) error {
+	cntrl := db.NewCloneMgoDBCntlr()
+	defer cntrl.Close()
+	userTable := cntrl.GetTable(constant.TableUser)
+	user := User{}
+	query := bson.M{
+		"openid": openid,
+	}
+	err := userTable.Find(query).One(&user)
+	if err != nil {
+		user.ID = bson.NewObjectId()
+		user.Openid = openid
+		err = userTable.Insert(user)
+	}
 	return err
+}
+
+func getUserByOpenid(openid string, selector bson.M) (User, error) {
+	query := bson.M{
+		"openid": openid,
+	}
+	return findUser(query, selector)
+}
+
+func findUser(query, selector bson.M) (User, error) {
+	cntrl := db.NewCloneMgoDBCntlr()
+	defer cntrl.Close()
+	userTable := cntrl.GetTable(constant.TableUser)
+	user := User{}
+	err := userTable.Find(query).Select(selector).One(&user)
+	return user, err
+}
+
+func updateUser(query, update bson.M) error {
+	cntrl := db.NewCloneMgoDBCntlr()
+	defer cntrl.Close()
+	userTable := cntrl.GetTable(constant.TableUser)
+
+	return userTable.Update(query, update)
 }

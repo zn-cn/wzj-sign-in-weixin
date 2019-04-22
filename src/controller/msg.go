@@ -7,6 +7,7 @@ import (
 	"model"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -30,6 +31,23 @@ var stateMachine = map[int]func(string, int) (string, error){
 	4: func(openid string, status int) (string, error) {
 		return getUserCoordinates(openid)
 	},
+	5: func(openid string, status int) (string, error) {
+		courses, err := model.ListWZJDiscussCourses(openid)
+		if err != nil {
+			return "", err
+		}
+		res := ""
+		for _, course := range courses {
+			if course.Topic == "" {
+				res += fmt.Sprintf(constant.WechatCourseWithOutTopicFormat+"\n", course.Name, course.ID)
+			} else {
+				res += fmt.Sprintf(constant.WechatCourseWithTopicFormat+"\n", course.Name, course.ID, course.Topic)
+			}
+		}
+		return res, nil
+	},
+	6: delStateMachine,
+	7: delStateMachine, // 设置邮件状态
 }
 
 var textMachine = map[string]func(string, string) (string, error){
@@ -66,6 +84,8 @@ var stateDel = map[int]func(string, string) (string, error){
 	1: addSignInTask,
 	2: addUserCoordinate,
 	3: setUserCurCoordinateByTag,
+	6: setUserCurCourse,
+	7: setUserEmail,
 }
 
 // 直接复制链接或者输入openid均可
@@ -122,6 +142,32 @@ func addUserCoordinate(openid, text string) (string, error) {
 func setUserCurCoordinateByTag(openid, text string) (string, error) {
 	coordinate, err := model.SetUserCurCoordinateByTag(openid, text)
 	return fmt.Sprintf("设置成功\n"+constant.WechatCoordinateFormat, text, coordinate.Lon, coordinate.Lat), err
+}
+
+func setUserCurCourse(openid, text string) (string, error) {
+	strs := strings.Split(text, ",")
+	if len(strs) != 2 {
+		strs = strings.Split(text, "，")
+		if len(strs) != 2 {
+			return "", errors.New("format error")
+		}
+	}
+	courseID, err := strconv.Atoi(strs[0])
+	if err != nil {
+		return "", errors.New("format error")
+	}
+
+	err = model.SetUserCurCourse(openid, strs[1], courseID)
+	return "设置成功", err
+}
+
+func setUserEmail(openid, email string) (string, error) {
+	if m, _ := regexp.MatchString("^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+", email); !m {
+		return "", errors.New("email format wrong")
+	}
+
+	err := model.SetUserEmail(openid, email)
+	return "设置成功", err
 }
 
 // DelEvent 处理微信的消息事件

@@ -13,11 +13,12 @@ import (
 
 // Config 配置
 type Config struct {
-	AppInfo appInfo `json:"AppInfo"`
-	Log     logConf `json:"Log"`
-	DB      db      `json:"DB"`
-	Redis   redis   `json:"Redis"`
-	Wechat  wechat  `json:"Wechat"`
+	AppInfo   appInfo   `json:"AppInfo"`
+	Log       logConf   `json:"Log"`
+	DB        db        `json:"DB"`
+	Redis     redis     `json:"Redis"`
+	Wechat    wechat    `json:"Wechat"`
+	EmailInfo emailInfo `json:"EmailInfo"`
 }
 
 type appInfo struct {
@@ -51,6 +52,13 @@ type redis struct {
 	Host string `json:"Host"`
 	Port string `json:"Port"`
 	PW   string `json:"PW"`
+}
+
+type emailInfo struct {
+	From     string `json:"From"`
+	UserName string `json:"UserName"`
+	AuthCode string `json:"AuthCode"`
+	Host     string `json:"Host"`
 }
 
 // Conf 配置

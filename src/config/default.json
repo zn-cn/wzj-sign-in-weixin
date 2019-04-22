@@ -26,5 +26,11 @@
     "AppSecret": "AppSecret",
     "Token": "Token",
     "EncodingAESKey": "EncodingAESKey"
+  },
+  "EmailInfo": {
+    "From": "<notice email>",
+    "UserName": "微助教提醒",
+    "AuthCode": "auth code",
+    "Host": "email host"
   }
 }
