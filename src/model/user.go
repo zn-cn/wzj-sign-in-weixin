@@ -44,7 +44,7 @@ type WZJCourse struct {
 	Code         string `json:"code"`
 	College      string `json:"college"`
 	Department   string `json:"department"`
-	DiscussionID string `json:"discussionId"`
+	DiscussionID int    `json:"discussionId"`
 	Selected     bool   `json:"selected"`
 }
 
@@ -303,10 +303,30 @@ func checkIsHaveDiscuss(openid string) error {
 	for _, course := range courses {
 		if course.Topic != "" {
 			content := fmt.Sprintf("课程名: %s\n讨论话题: %s, 是否被选中: %v", course.Name, course.Topic, course.Selected)
-			go util.SendEmail("阿楠技术", "微助教讨论提醒", content, []string{user.Email})
+			if ok, _ := getRedisUserCourseNotice(openid, course.ID); !ok {
+				go util.SendEmail("阿楠技术", "微助教讨论提醒", content, []string{user.Email})
+				setRedisUserCourseNotice(openid, course.ID)
+			}
 		}
 	}
 	return nil
+}
+
+func getRedisUserCourseNotice(openid string, courseID int) (bool, error) {
+	cntrl := db.NewRedisDBCntlr()
+	defer cntrl.Close()
+	conn := cntrl.GetConn()
+
+	return redis.Bool(conn.Do("GET", fmt.Sprintf(constant.RedisUserDisCourseNotice, openid, courseID)))
+}
+
+func setRedisUserCourseNotice(openid string, courseID int) error {
+	cntrl := db.NewRedisDBCntlr()
+	defer cntrl.Close()
+	conn := cntrl.GetConn()
+
+	_, err := conn.Do("SETEX", fmt.Sprintf(constant.RedisUserDisCourseNotice, openid, courseID), 3600*24, true)
+	return err
 }
 
 func ListWZJDiscussCourses(openid string) ([]WZJCourse, error) {
@@ -334,9 +354,18 @@ func ListWZJDiscussCourses(openid string) ([]WZJCourse, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := map[string][]WZJCourse{}
+	data := map[string]interface{}{}
 	err = jsoniter.Unmarshal(dataByte, &data)
-	return data["courses"], err
+	if err != nil {
+		return nil, err
+	}
+	coursesByte, err := jsoniter.Marshal(data["courses"])
+	if err != nil {
+		return nil, err
+	}
+	courses := []WZJCourse{}
+	err = jsoniter.Unmarshal(coursesByte, &courses)
+	return courses, err
 }
 
 func getTextOpenid(openid string) (string, error) {
