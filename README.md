@@ -17,6 +17,8 @@
 
 坐标拾取：https://lbs.amap.com/console/show/picker
 
+坐标处理：签到时会对坐标进行随机化处理和截断处理，防止坐标惊人的一致
+
 常用经纬度
 
 - 东十二:114.440465,30.517877
@@ -40,7 +42,7 @@
 
 ## 使用
 
-关注公众号：
+关注公众号：阿楠技术
 
 ![qrcode](./dist/qrcode.jpg)
 
@@ -63,9 +65,9 @@
 
 示例如下：
 
-![screenshot5](./dist/screenshot5.jpg)
+![screenshot10](./dist/screenshot10.jpg)
 
-![screenshot6](./dist/screenshot6.jpg)
+![screenshot9](./dist/screenshot9.jpg)
 
 ## 原理
 
@@ -110,7 +112,7 @@
 - 设置一个定时器，如：every 5s, 定时检测队列中是否存在监控对象
 - 取出队列中监控的对象，监控对象可存储openid（微助教openid）
 - 对象监控自动过期删除（两小时）
-- 遍历监控对象进行签到
+- 遍历监控对象进行签到（签到时会对坐标进行随机化处理和截断处理，防止坐标惊人的一致）
 
 
 ## 注意
