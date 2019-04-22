@@ -312,29 +312,29 @@ func checkIsHaveDiscuss(openid string) error {
 	for _, course := range courses {
 		if course.Topic != "" {
 			content := fmt.Sprintf("课程名: %s<br/>讨论话题: %s<br/>课程是否被选中: %v", course.Name, course.Topic, course.Selected)
-			if ok, _ := getRedisUserCourseNotice(openid, course.ID); !ok {
+			if ok, _ := getRedisUserCourseNotice(openid, course.ID, course.DiscussionID); !ok {
 				go util.SendEmail("阿楠技术", "微助教讨论提醒", content, []string{user.Email})
-				setRedisUserCourseNotice(openid, course.ID)
+				setRedisUserCourseNotice(openid, course.ID, course.DiscussionID)
 			}
 		}
 	}
 	return nil
 }
 
-func getRedisUserCourseNotice(openid string, courseID int) (bool, error) {
+func getRedisUserCourseNotice(openid string, courseID, discussionID int) (bool, error) {
 	cntrl := db.NewRedisDBCntlr()
 	defer cntrl.Close()
 	conn := cntrl.GetConn()
 
-	return redis.Bool(conn.Do("GET", fmt.Sprintf(constant.RedisUserDisCourseNotice, openid, courseID)))
+	return redis.Bool(conn.Do("GET", fmt.Sprintf(constant.RedisUserDisCourseNotice, openid, courseID, discussionID)))
 }
 
-func setRedisUserCourseNotice(openid string, courseID int) error {
+func setRedisUserCourseNotice(openid string, courseID, discussionID int) error {
 	cntrl := db.NewRedisDBCntlr()
 	defer cntrl.Close()
 	conn := cntrl.GetConn()
 
-	_, err := conn.Do("SETEX", fmt.Sprintf(constant.RedisUserDisCourseNotice, openid, courseID), 3600*24, true)
+	_, err := conn.Do("SETEX", fmt.Sprintf(constant.RedisUserDisCourseNotice, openid, courseID, discussionID), 3600*24, true)
 	return err
 }
 
