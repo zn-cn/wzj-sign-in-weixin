@@ -276,14 +276,23 @@ func userCheckIn(textOpenid string, coordinate Coordinate) (bool, error) {
 }
 
 func signSuccessNotice(openid string) error {
-	query := bson.M{
-		"openid": openid,
-	}
-	user, _ := findUser(query, bson.M{"email": 1})
+	user, _ := getUserByOpenid(openid, bson.M{"email": 1})
 	if user.Email == "" {
 		return errors.New("email empty")
 	}
-	util.SendEmail("阿楠技术", "微助教签到成功提醒", "微助教签到成功提醒", []string{user.Email})
+	// 垃圾邮件？
+	content := `<body style="margin: 0; padding: 0;">
+
+　<table border="1" cellpadding="0" cellspacing="0" width="100%">
+
+　　<tr>
+　　　<td> Hello World! </td>
+　　</tr>
+
+　</table>
+
+</body>`
+	util.SendEmail("阿楠技术", "微助教签到成功提醒", content, []string{user.Email})
 	return nil
 }
 
