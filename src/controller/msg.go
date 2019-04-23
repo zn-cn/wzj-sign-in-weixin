@@ -178,12 +178,7 @@ func DelEvent(c echo.Context) error {
 		return c.XML(http.StatusBadGateway, nil)
 	}
 	var resData interface{}
-	textData := model.WechatTextRes{
-		ToUserName:   data.FromUserName,
-		FromUserName: data.ToUserName,
-		CreateTime:   data.CreateTime,
-		MsgType:      "text",
-	}
+	textData := model.GetDefaultTextMsg(data)
 	if data.MsgType == "event" {
 		// 处理事件消息
 		resData, err = event[data.EventType](data)
@@ -191,6 +186,7 @@ func DelEvent(c echo.Context) error {
 		// 接收普通消息
 		text := data.Content
 		status, err := strconv.Atoi(text)
+
 		if f, ok := stateMachine[status]; err == nil && ok {
 			// 设置状态
 			textData.Content, err = f(data.FromUserName, status)
