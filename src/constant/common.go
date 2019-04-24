@@ -3,8 +3,8 @@ package constant
 const (
 	APIPrefix = "/api/v1"
 
-	TimerEveryHour       = "@hourly"   // 每小时触发
-	TimerEveryFiveSecond = "@every 5s" // 每五秒触发
+	TimerEveryHour         = "@hourly"    // 每小时触发
+	TimerEveryTwentySecond = "@every 20s" // 签到太快了，老师容易发现，设置慢一点
 
 	/****************************************** wechat ****************************************/
 	WechatWelcomeText              = "终于等到你！"

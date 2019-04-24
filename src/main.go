@@ -34,6 +34,6 @@ func startTimer() {
 	c := cron.New()
 	controller.StartHourTimer()
 	c.AddFunc(constant.TimerEveryHour, controller.StartHourTimer)
-	c.AddFunc(constant.TimerEveryFiveSecond, controller.StartTaskTimer)
+	c.AddFunc(constant.TimerEveryTwentySecond, controller.StartTaskTimer)
 	c.Start()
 }

@@ -252,8 +252,8 @@ func userCheckIn(textOpenid string, coordinate Coordinate) (bool, error) {
 	if data.Get("courseId") != "" && data.Get("openid") != "" && data.Get("signId") != "" {
 		rand.Seed(time.Now().UnixNano())
 		// 随机化处理，防止一致
-		coordinate.Lon += float64(rand.Intn(40)-20) * 0.00001
-		coordinate.Lat += float64(rand.Intn(40)-20) * 0.00001
+		coordinate.Lon += float64(rand.Intn(40)-20) * 0.000001
+		coordinate.Lat += float64(rand.Intn(40)-20) * 0.000001
 		data.Set("lon", strconv.FormatFloat(coordinate.Lon, 'f', 5, 64)) // 5 表示截断为5位小数
 		data.Set("lat", strconv.FormatFloat(coordinate.Lat, 'f', 5, 64))
 		req, err := http.NewRequest("POST", constant.URLWZJStuSignIn, ioutil.NopCloser(strings.NewReader(data.Encode())))
