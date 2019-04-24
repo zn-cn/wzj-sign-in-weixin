@@ -79,6 +79,8 @@
 
 ![screenshot1](./dist/screenshot1.png)
 
+下图需要手动刷新一下页面才能看到效果（实际已签到，但页面没有更新）
+
 ![screenshot7](./dist/screenshot7.png)
 
 ![img](https://mmbiz.qpic.cn/mmbiz_jpg/o0CwfJSKW4xiacguVibaxCVDHupDicXysSEFwEmBHaAZ28OwCJEFyxJllHY94uvY47U3rvHEJGspKwEpuLiaYquJXA/640?wx_fmt=jpeg&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
