@@ -1,7 +1,7 @@
 package db
 
 import (
-	"config"
+	"github.com/yun-mu/wzj-sign-in-weixin/config"
 	"fmt"
 	"time"
 

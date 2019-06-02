@@ -6,7 +6,8 @@ services:
     environment:
       - TZ=Asia/Shanghai
       - ENV=prod
-      - CONFIG_PATH_PREFIX=/app/src/config/
+      - CONFIG_PATH_PREFIX=/app/project/config/
+      - ProjectPath=/app/project
 
       - WeixinAppID=WeixinAppID
       - WeixinAppSecret=WeixinAppSecret
@@ -20,7 +21,8 @@ services:
       - RedisPass=PASSWORD
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./src:/app/src
+      - ./src:/app/project
+      - ./pkg:/app/pkg
       - ./log:/app/log
     ports:
       - "6562:3000"
@@ -28,7 +30,7 @@ services:
       - redis
       - mongo
     container_name: wechat-service-center-api
-    entrypoint: go run src/main.go
+    entrypoint: bash project/run.sh
   mongo:
     image: mongo:3.6.3
     expose:

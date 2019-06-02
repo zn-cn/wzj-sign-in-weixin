@@ -2,18 +2,18 @@ package model
 
 import (
 	"bytes"
-	"constant"
+	"github.com/yun-mu/wzj-sign-in-weixin/constant"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"model/db"
+	"github.com/yun-mu/wzj-sign-in-weixin/model/db"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
-	"util"
+	"github.com/yun-mu/wzj-sign-in-weixin/util"
 
 	jsoniter "github.com/json-iterator/go"
 

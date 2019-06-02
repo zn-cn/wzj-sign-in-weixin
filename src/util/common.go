@@ -1,7 +1,7 @@
 package util
 
 import (
-	"config"
+	"github.com/yun-mu/wzj-sign-in-weixin/config"
 
 	gomail "gopkg.in/gomail.v2"
 )

@@ -1,8 +1,8 @@
 package model
 
 import (
-	"config"
-	"constant"
+	"github.com/yun-mu/wzj-sign-in-weixin/config"
+	"github.com/yun-mu/wzj-sign-in-weixin/constant"
 	"fmt"
 	"sync"
 

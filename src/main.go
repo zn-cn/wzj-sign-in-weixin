@@ -4,9 +4,10 @@ Package main package is the entry file
 package main
 
 import (
-	"config"
-	"constant"
-	"controller"
+	"github.com/yun-mu/wzj-sign-in-weixin/controller"
+
+	"github.com/yun-mu/wzj-sign-in-weixin/config"
+	"github.com/yun-mu/wzj-sign-in-weixin/constant"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"

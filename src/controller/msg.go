@@ -1,15 +1,16 @@
 package controller
 
 import (
-	"constant"
 	"errors"
 	"fmt"
-	"model"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/yun-mu/wzj-sign-in-weixin/constant"
+	"github.com/yun-mu/wzj-sign-in-weixin/model"
 
 	"github.com/labstack/echo"
 )
