@@ -45,10 +45,6 @@
 
 ## 使用指南
 
-关注公众号：阿楠技术
-
-![qrcode](./dist/qrcode.jpg)
-
 ![img](https://mmbiz.qpic.cn/mmbiz_png/o0CwfJSKW4xiacguVibaxCVDHupDicXysSESJicpy5OlGCFMK98iafzKHofY9ficcJJznahzErF9lkbXficTJ3mK3UbHQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
 
 ![img](https://mmbiz.qpic.cn/mmbiz_jpg/o0CwfJSKW4xiacguVibaxCVDHupDicXysSESuQygic7Of8LR3rxfenssHuYlFBRibM1RNgw3ScLMicYJ6c0YgiaIHQibCg/640?wx_fmt=jpeg&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
